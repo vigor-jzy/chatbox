@@ -1,5 +1,5 @@
 import type { DeviceFlowStartResult, OAuthProviderInfo, OAuthResult, OAuthStartResult } from '@shared/oauth'
-import { isOAuthExpired, OAuthIpcChannels } from '@shared/oauth'
+import { isOAuthExpired } from '@shared/oauth'
 import { useCallback, useEffect, useRef } from 'react'
 import platform from '@/platform'
 import { useProviderSettings } from '@/stores/settingsStore'
@@ -34,7 +34,7 @@ export function useOAuth(
     return () => {
       mountedRef.current = false
       if (isDesktop) {
-        ;(platform as any).ipc.invoke(OAuthIpcChannels.CANCEL, oauthProviderId).catch(() => {})
+        ;(platform as any).ipc.invoke('OAUTH_CANCEL', oauthProviderId).catch(() => {})
       }
     }
   }, [isDesktop, oauthProviderId])
@@ -43,7 +43,7 @@ export function useOAuth(
   const cancel = useCallback(async () => {
     if (!isDesktop) return
     try {
-      await (platform as any).ipc.invoke(OAuthIpcChannels.CANCEL, oauthProviderId)
+      await (platform as any).ipc.invoke('OAUTH_CANCEL', oauthProviderId)
     } catch {
       // ignore
     }
@@ -53,7 +53,7 @@ export function useOAuth(
   const loginCallback = useCallback(async (): Promise<OAuthResult> => {
     if (!isDesktop) return { success: false, error: 'Not desktop' }
     try {
-      const resultJson: string = await (platform as any).ipc.invoke(OAuthIpcChannels.LOGIN, oauthProviderId)
+      const resultJson: string = await (platform as any).ipc.invoke('OAUTH_LOGIN', oauthProviderId)
       const result: OAuthResult = JSON.parse(resultJson)
       if (result.success && result.credentials && mountedRef.current) {
         setTokenProviderSettings({ oauth: result.credentials })
@@ -69,7 +69,7 @@ export function useOAuth(
   const startLogin = useCallback(async (): Promise<OAuthStartResult> => {
     if (!isDesktop) return { success: false, error: 'Not desktop' }
     try {
-      const resultJson: string = await (platform as any).ipc.invoke(OAuthIpcChannels.START_LOGIN, oauthProviderId)
+      const resultJson: string = await (platform as any).ipc.invoke('OAUTH_START_LOGIN', oauthProviderId)
       return JSON.parse(resultJson)
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) }
@@ -81,7 +81,7 @@ export function useOAuth(
       if (!isDesktop) return { success: false, error: 'Not desktop' }
       try {
         const resultJson: string = await (platform as any).ipc.invoke(
-          OAuthIpcChannels.EXCHANGE_CODE,
+          'OAUTH_EXCHANGE_CODE',
           oauthProviderId,
           code
         )
@@ -102,7 +102,7 @@ export function useOAuth(
   const startDeviceFlow = useCallback(async (): Promise<DeviceFlowStartResult> => {
     if (!isDesktop) return { success: false, error: 'Not desktop' }
     try {
-      const resultJson: string = await (platform as any).ipc.invoke(OAuthIpcChannels.START_DEVICE_FLOW, oauthProviderId)
+      const resultJson: string = await (platform as any).ipc.invoke('OAUTH_START_DEVICE_FLOW', oauthProviderId)
       return JSON.parse(resultJson)
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) }
@@ -112,7 +112,7 @@ export function useOAuth(
   const waitForDeviceToken = useCallback(async (): Promise<OAuthResult> => {
     if (!isDesktop) return { success: false, error: 'Not desktop' }
     try {
-      const resultJson: string = await (platform as any).ipc.invoke(OAuthIpcChannels.WAIT_DEVICE_TOKEN, oauthProviderId)
+      const resultJson: string = await (platform as any).ipc.invoke('OAUTH_WAIT_DEVICE_TOKEN', oauthProviderId)
       const result: OAuthResult = JSON.parse(resultJson)
       if (result.success && result.credentials && mountedRef.current) {
         setTokenProviderSettings({ oauth: result.credentials })
@@ -139,7 +139,7 @@ export function useOAuth(
     refreshingRef.current = true
     try {
       const resultJson: string = await (platform as any).ipc.invoke(
-        OAuthIpcChannels.REFRESH,
+        'OAUTH_REFRESH',
         oauthProviderId,
         JSON.stringify(tokenProviderSettings.oauth)
       )
@@ -207,3 +207,4 @@ export function useOAuth(
     refreshToken,
   }
 }
+
